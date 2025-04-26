@@ -1,0 +1,49 @@
+services:
+  fe:
+    container_name: basic-crud-fe-container
+    build:
+      context: ./frontend
+      dockerfile: dockerfile
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - mynetwork
+    depends_on:
+      - be
+
+  be:
+    container_name: basic-crud-be-container
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+    ports:
+      - "8080:8080"
+    networks:
+      - mynetwork
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    container_name: basic-crud-db-container
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    networks:
+      - mynetwork
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+networks:
+  mynetwork:
+
+volumes:
+  db_data:
